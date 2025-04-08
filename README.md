@@ -17,6 +17,8 @@ It includes exploratory data analysis (EDA), stationarity checks, univariate and
 
 **Other stuff**
 - `tsdata1.xlsx`: Data
+- `univariate_prophet.pkl`: Final Univariate Prophet Model
+- `multivariate_prophet.pkl`: Fianl Multivariate Propeht Model
 
 ## Methodology
 
@@ -96,7 +98,7 @@ This section outlines the modeling approach using Facebook Prophet, a decomposab
 The exploratory data analysis revealed that the weekly sales data is stationary, as confirmed by both the ADF and KPSS tests, and that there is no pronounced seasonality in the STL/FFT decomposition. I start with simple ARIMA models aimed at capturing any short-term autocorrelation inherent in the data without needing to account for strong seasonal components.
 | Model     | Order                        | MAPE   | SMAPE  | MAE    | RMSE   |
 |-----------|-------------------------------|--------|--------|--------|--------|
-| ARIMA     | (0, 0, 1)                     | 36.14% | 25.10% | 1317.3 | 1741.6 |
+| ARIMA     | (0, 0, 1)                     | 36.14% | 25.10% | 1317.3 | 1741.6 | 
 | SARIMA    | (0, 0, 1)(0, 0, 1, 7)         | 36.14% | 25.10% | 1317.3 | 1741.6 |
 | ARIMAX    | (2, 0, 0) + `x1_spend`, `x2_spend` | 20.34% | 18.23% | 877.4  | 1059.3 |
 | SARIMAX   | (2, 0, 0)(0, 0, 0, 7) + `x1_spend`, `x2_spend`  | 20.34% | 18.23% | 877.4  | 1059.3 |
@@ -125,12 +127,6 @@ Another promising line of development lies in the adoption of transformer-based 
 ## Side Note
 ### How do you sample data
 To evaluate forecasting performance while preserving temporal integrity, I applied time series–aware cross-validation methods. For ARMA-Based models, I used `TimeSeriesSplit` from sklearn, which incrementally expands the training window and slides the test window forward. This approach ensures no future data leaks into training and simulates sequential prediction. For Prophet, I used its built-in `cross_validation` function with a rolling-origin strategy, specifying the initial training period, forecast horizon, and step size. This mimics a real-world deployment where the model is retrained regularly and evaluated on unseen future data. These strategies provided consistent and realistic performance assessments across models.
-
-### Why stationary and how to check
-Most classical time series models, such as ARIMA, assume that the underlying data is stationary—that is, its statistical properties (mean, variance, autocorrelation) do not change over time. Stationarity is crucial because it ensures that relationships learned from historical data are stable and remain valid in the future. To check for stationarity, I applied two complementary statistical tests using statsmodels in Python:
-- **Augmented Dickey–Fuller (ADF) Test**: A unit root test where a significant p-value (typically < 0.05) suggests the series is stationary.
-- **Kwiatkowski–Phillips–Schmidt–Shin (KPSS) Test**: Here, a non-significant p-value (typically > 0.05) indicates stationarity.
-- In addition to statistical tests, I examined **rolling statistics** (mean and standard deviation) and **time plots** to visually assess whether the series exhibits constant behavior over time.
 
 ### What is auto-regressive and Moving Average and how to determine p&q
 - An **Auto-Regressive (AR)** model assumes the current value depends on its own previous values. AR(p) model: $y_t = \phi_1 y_{t-1} + \phi_2 y_{t-2} + \dots + \phi_p y_{t-p} + \epsilon_t$
@@ -167,6 +163,49 @@ Before presenting and validating any time series model, several key diagnostics 
 - **MAE** (Mean Absolute Error) and **RMSE** (Root Mean Squared Error): Quantify absolute and squared prediction error magnitude.
 
 A reliable model should demonstrate white-noise residuals, good in-sample fit, and low forecast errors on unseen data—validated through both statistical and visual diagnostics.
+
+### Defind Final models
+Although the time series initially appeared to resemble white noise—exhibiting minimal autocorrelation and no obvious trend or seasonality—Prophet was still a valuable modeling choice. Unlike ARIMA-based models, which rely heavily on clear autocorrelation structures and stationarity, Prophet does not assume a specific underlying time series form. Instead, it offers a flexible additive framework that can still detect weak trends, subtle periodicities, or exogenous influences that may not be visible through traditional statistical diagnostics. Its built-in changepoint detection and intuitive component plots provided greater interpretability and insight—even when working with a seemingly random series.
+
+**Univariate: Prophet**
+
+| Parameter                     | Value         | Rationale                                                                                   |
+|------------------------------|---------------|---------------------------------------------------------------------------------------------|
+| `seasonality_mode`           | `'multiplicative'` | Additive seasonality assumes a fixed seasonal impact regardless of trend level, which would have underfit the seasonality during high-growth periods. Multiplicative mode more accurately captures this proportional seasonal variation, resulting in a better model fit and more realistic forecasts.|
+| `yearly_seasonality`         | `False`       | Yearly component would be noisy/unreliable.          |
+| `changepoint_prior_scale`    | `0.1`         | Balances flexibility and overfitting; allows moderate trend changes.                       |
+| `n_changepoints`             | `30`          | Capture multiple trend shifts in training data.                    |
+
+| Seasonality Name | Period (Chosen based on FFT)  | Fourier Order | 
+|------------------|----------|----------------|
+| `7w_season`      | `7.111`  | `6`            |
+| `2w_season`      | `2.33`   | `7`            |
+| `5w_season`      | `5.333`  | `3`            |
+| `42w_season`     | `42.667` | `1`            |
+| `8w_season`      | `8`      | `2`            |
+
+**Multivariate: Prophet**
+
+| Parameter                  | Value           | Rationale                                                                 |
+|---------------------------|-----------------|--------------------------------------------------------------------------|
+| `seasonality_mode`        | `'multiplicative'` | As above       |
+| `yearly_seasonality`      | `False`         | As above       |
+| `changepoint_prior_scale` | `0.05`          | More conservative trend flexibility to reduce overfitting.               |
+
+| Seasonality Name | Period (Chosen based on FFT)  | Fourier Order |
+|------------------|----------|----------------|
+| `7w_season`      | `7.11`   | `7`            |
+| `2w_season`      | `2.33`   | `6`            |
+| `42w_season`     | `42.67`  | `2`            | 
+| `8w_season`      | `8.0`    | `1`            | 
+
+
+### Why stationary and how to check
+Most classical time series models, such as ARIMA, assume that the underlying data is stationary—that is, its statistical properties (mean, variance, autocorrelation) do not change over time. Stationarity is crucial because it ensures that relationships learned from historical data are stable and remain valid in the future. To check for stationarity, I applied two complementary statistical tests using statsmodels in Python:
+- **Augmented Dickey–Fuller (ADF) Test**: A unit root test where a significant p-value (typically < 0.05) suggests the series is stationary.
+- **Kwiatkowski–Phillips–Schmidt–Shin (KPSS) Test**: Here, a non-significant p-value (typically > 0.05) indicates stationarity.
+- In addition to statistical tests, I examined **rolling statistics** (mean and standard deviation) and **time plots** to visually assess whether the series exhibits constant behavior over time.
+
 
 ## Reference
 - [Oracle – Time Series Forecasting (OML4SQL)](https://docs.oracle.com/en/database/oracle/machine-learning/oml4sql/21/dmcon/time-series.html#GUID-0D6954B9-9D66-42E2-A62F-F3FFE84B827E)
