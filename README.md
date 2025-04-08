@@ -65,7 +65,7 @@ Importance of stationarity: In classical time series forecasting methods such as
   - Low correlation between `x1_spend` and `x2_spend` (~0.02).
   - VIF for both variables = 4.92, below threshold of concern.
   
-### ARMA-Baed Modeling (`2_arma_based.ipynb`):
+### ARMA-Based Modeling (`2_arma_based.ipynb`):
 This section describes the full modeling process using ARIMA-family models (ARIMA, SARIMA, ARIMAX, SARIMAX), including training, hyperparameter selection, diagnostics, and evaluation.
 
 **1. Preprocessing**  
