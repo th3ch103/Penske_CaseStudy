@@ -15,7 +15,8 @@ It includes exploratory data analysis (EDA), stationarity checks, univariate and
 - `modeling_arima.py`: ARIMA modeling functions
 - `modeling_prophet.py`: Prophet modeling functions
 
-**Final Model**
+**Other Stuff**
+- `tsdata1.xlsx`: Data
 - `univariate_prophet.pkl`: Univariate Prophet Model
 - `multivariate_prophet.pkl`: Multivariate Propeht Model
 
