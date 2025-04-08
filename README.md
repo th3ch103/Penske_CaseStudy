@@ -164,7 +164,7 @@ Before presenting and validating any time series model, several key diagnostics 
 
 A reliable model should demonstrate white-noise residuals, good in-sample fit, and low forecast errors on unseen data—validated through both statistical and visual diagnostics.
 
-### Defind Final models
+### Defend Final models
 Although the time series initially appeared to resemble white noise—exhibiting minimal autocorrelation and no obvious trend or seasonality—Prophet was still a valuable modeling choice. Unlike ARIMA-based models, which rely heavily on clear autocorrelation structures and stationarity, Prophet does not assume a specific underlying time series form. Instead, it offers a flexible additive framework that can still detect weak trends, subtle periodicities, or exogenous influences that may not be visible through traditional statistical diagnostics. Its built-in changepoint detection and intuitive component plots provided greater interpretability and insight—even when working with a seemingly random series.
 
 **Univariate: Prophet**
