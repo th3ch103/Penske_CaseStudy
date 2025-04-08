@@ -1,7 +1,7 @@
 # Penske_CaseStudy
 
-This case study project focuses on modeling and forecasting time series weekly sales data using ARIMA and Prophet. 
-It includes exploratory data analysis (EDA), stationarity checks, univariate and multivariate modeling, parameter tuning, and model evaluation using metrics such as MAPE, MAE, and RMSE.
+This case study project focuses on modeling and forecasting time series weekly sales data using ARMA-Based model and Prophet. 
+It includes exploratory data analysis (EDA), stationarity checks, univariate and multivariate modeling, parameter tuning, residual diagnostics, and model evaluation using metrics such as MAPE, MAE, and RMSE.
 
 ## Project Structure
 
@@ -126,7 +126,7 @@ Another promising line of development lies in the adoption of transformer-based 
 ### How do you sample data
 To evaluate forecasting performance while preserving temporal integrity, I applied time series–aware cross-validation methods. For ARMA-Based models, I used `TimeSeriesSplit` from sklearn, which incrementally expands the training window and slides the test window forward. This approach ensures no future data leaks into training and simulates sequential prediction. For Prophet, I used its built-in `cross_validation` function with a rolling-origin strategy, specifying the initial training period, forecast horizon, and step size. This mimics a real-world deployment where the model is retrained regularly and evaluated on unseen future data. These strategies provided consistent and realistic performance assessments across models.
 
-### Why Stationary and how to check
+### Why stationary and how to check
 Most classical time series models, such as ARIMA, assume that the underlying data is stationary—that is, its statistical properties (mean, variance, autocorrelation) do not change over time. Stationarity is crucial because it ensures that relationships learned from historical data are stable and remain valid in the future. To check for stationarity, I applied two complementary statistical tests using statsmodels in Python:
 - **Augmented Dickey–Fuller (ADF) Test**: A unit root test where a significant p-value (typically < 0.05) suggests the series is stationary.
 - **Kwiatkowski–Phillips–Schmidt–Shin (KPSS) Test**: Here, a non-significant p-value (typically > 0.05) indicates stationarity.
