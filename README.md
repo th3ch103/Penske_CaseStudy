@@ -25,7 +25,7 @@ It includes exploratory data analysis (EDA), stationarity checks, univariate and
 - The dataset contains 160 weekly records from Jan 2020 to Jan 2023, including:
   - `weekly_sales`: target variable.
   - `x1_spend`, `x2_spend`: external regressors.
-- Initial EDA revealed moderate variance in sales with no missing values or extreme outliers.
+- Initial EDA revealed moderate variance in sales with **no missing values** or **extreme outliers**.
   
 **2. Seasonality Analysis**
 - **STL decomposition** (with seasonal periods of 7, 13, 26, and 52 weeks):
@@ -36,8 +36,8 @@ It includes exploratory data analysis (EDA), stationarity checks, univariate and
 - **ACF/PACF ploat**: no distinct seasonal period observed by `y.diff(s)`.
 
 **3. Stationarity Testing**
-- ADF and KPSS tests confirm that `weekly_sales`, `x1_spend`, and `x2_spend` are all stationary.
-- Rolling statistics and ACF/PACF plots support stationarity visually.
+- **ADF** and **KPSS** tests confirm that `weekly_sales`, `x1_spend`, and `x2_spend` are all stationary.
+- **Rolling statistics** and **ACF/PACF plots** support stationarity visually.
 - No significant autocorrelations were observed, suggesting a weak AR/MA structure.
   
 **4. Feature & Lag Analysis**
@@ -58,7 +58,7 @@ This section describes the full modeling process using ARIMA-family models (ARIM
 
 **2. Model Selection via Grid Search**  
    - Hyperparameter tuning via `TimeSeriesSplit` cross-validation.
-   - Evaluated using AIC, BIC, and MAPE to identify best model.
+   - Evaluated using **AIC**, **BIC**, and **MAPE** to identify best model.
 
 **3. Model Training & Forecasting**  
    - Final model fitted on full training data.
@@ -101,24 +101,26 @@ The exploratory data analysis revealed that the weekly sales data is stationary,
 | ARIMAX    | (2, 0, 0) + `x1_spend`, `x2_spend` | 20.34% | 18.23% | 877.4  | 1059.3 |
 | SARIMAX   | (2, 0, 0)(0, 0, 0, 7) + `x1_spend`, `x2_spend`  | 20.34% | 18.23% | 877.4  | 1059.3 |
 
-The basic ARIMA and its seasonal variant, SARIMA, yielded similar results with a MAPE of 36.14%, indicating that adding the seasonal component in this case did not enhance model performance given the absence of dominant seasonal patterns. To better capture the effects of external factors, the models were extended to ARIMAX and SARIMAX by incorporating the regressors `x1_spend` and `x2_spend`. This integration led to a significant improvement in forecasting accuracy, reducing the MAPE to around 20.34%. For all models above, the ACF and PACF plots of the residuals showed no significant lags, and the Ljung–Box test returned a reasonable p-value, indicating that the residuals behave like white noise and that the model has sufficiently captured the underlying temporal structure. Furthermore, the Q–Q plot confirmed that the residuals were approximately normally distributed with no substantial skewness or kurtosis, supporting the assumption of well-behaved residuals and the statistical reliability of the forecasts.
+The basic ARIMA and its seasonal variant, SARIMA, yielded similar results with a MAPE of 36.14%, indicating that adding the seasonal component in this case did not enhance model performance given the **absence of dominant seasonal patterns**. To better capture the effects of external factors, the models were extended to ARIMAX and SARIMAX by incorporating the regressors `x1_spend` and `x2_spend`. This integration led to an  improvement in forecasting accuracy, reducing the MAPE to around 20.34%. 
 
-Despite the reasonable performance of ARMA-Based model, they rely on fixed lag structures and cannot capture nonlinear effects, multiple overlapping seasonalities, or sudden changepoints in trend, thus I moved on with Prophet model.
+For all models above, the ACF and PACF plots of the residuals showed **no significant lags**, and the Ljung–Box test returned a reasonable p-value, indicating that the **residuals behave like white noise**. Furthermore, the Q–Q plot confirmed that the residuals were approximately normally distributed with **no substantial skewness or kurtosis**, supporting the assumption of well-behaved residuals and the statistical reliability of the forecasts.
+
+Despite the reasonable performance of ARMA-Based model, they rely on **fixed lag structures** and cannot capture **nonlinear effects**, **multiple overlapping seasonalities**, or **sudden changepoints in trend**, thus I moved on with Prophet model.
 | Model             | Type         | MAPE   | SMAPE  | MAE    | RMSE   |
 |------------------|--------------|--------|--------|--------|--------|
 | Prophet           | Univariate   | 33.87% | 23.74% | 1219.4 | 1697.1 |
 | Prophet           | Multivariate | 19.55% | 17.55% | 828.4 | 1089.0 |
 
-The Prophet modeling framework offers an attractive alternative in this context. When deployed in its univariate form, Prophet yielded a MAPE of 33.87%. By integrating the same exogenous variables, the multivariate Prophet model improved the forecast performance marginally further, achieving a MAPE of 19.55%. This slight performance advantage compared to ARMA-Based model indicates that Prophet's flexibility in handling nonlinear effects, abrupt changepoints, and non-standard seasonality—even when not strongly pronounced—provides a robust tool for forecasting in such scenarios.
+When deployed in its univariate form, Prophet yielded a MAPE of 33.87%. By integrating the same exogenous variables, the multivariate Prophet model improved the forecast performance marginally further, achieving a MAPE of 19.55%. This **slight performance advantage** compared to ARMA-Based model indicates that Prophet's flexibility in handling nonlinear effects, abrupt changepoints, and non-standard seasonality—even when not strongly pronounced—provides a robust tool for forecasting in such scenarios.
 
-Although Prophet does not formally require residual diagnostics in the same way traditional statistical models do, such checks remain essential in practice. They provide assurance that the fitted model has effectively captured the signal, that its uncertainty intervals are well-calibrated, and that its forecasts can be trusted for decision-making. In univariate Prophet nidek applied here, the residual analysis supports the reliability of the results and further strengthens the case for using Prophet as a flexible forecasting framework, particularly in the presence of complex dynamics and external drivers. In the multivariate version, however, while residuals generally follow a normal distribution, slight tail deviations in the Q–Q plot suggest mild non-normality. This may indicate that the model underrepresents rare but impactful fluctuations—such as promotional events or supply shocks—that lie outside the range of typical weekly variation.
+Although Prophet does not formally require residual diagnostics in the same way traditional statistical models do, such checks remain essential in practice. They provide assurance that the fitted model has effectively captured the signal. In univariate Prophet nidek applied here, the residual analysis supports the reliability of the results and further strengthens the case for using Prophet as a flexible forecasting framework, particularly in the presence of complex dynamics and external drivers. In the multivariate version, however, while residuals **generally follow a normal distribution**, slight tail deviations in the Q–Q plot suggest mild non-normality. This may indicate that the model underrepresents rare but impactful fluctuations—such as promotional events or supply shocks—that lie outside the range of typical weekly variation.
 
 ## Future Work
-Building on this, a natural direction for future work is to integrate deeper domain knowledge—for instance, through custom holiday effects, event regressors, or categorical segmentation—could improve model expressiveness. More sophisticated hyperparameter tuning and cross-validation strategies would likely enhance generalization performance and reduce variance in real-time deployments.
+Building on this, a natural direction for future work is to integrate **deeper domain knowledge**—for instance, through custom holiday effects, event regressors, or categorical segmentation—could improve model expressiveness. More **sophisticated hyperparameter tuning** and more **sophisticated cross-validation** methods would likely enhance generalization performance and reduce variance in real-time deployments.
 
-In addition, exploring hybrid modeling approaches that combine the respective strengths of Prophet and traditional ARIMA-based frameworks. Prophet’s adaptability to nonlinearity, irregular seasonality, and structural breaks could be complemented by the statistical rigor and interpretability of ARIMAX or SARIMAX, particularly in capturing autoregressive structure and evaluating model assumptions. Such an ensemble or regime-switching framework may offer a more robust and interpretable solution, especially in scenarios where model transparency is essential for stakeholders.
+In addition, exploring **hybrid modeling** approaches that combine the respective strengths of Prophet and traditional ARIMA-based frameworks. Prophet’s adaptability to nonlinearity, irregular seasonality, and structural breaks could be complemented by the statistical rigor and interpretability of ARIMAX or SARIMAX, particularly in capturing autoregressive structure and evaluating model assumptions. Such an ensemble or regime-switching framework may offer a more robust and interpretable solution, especially in scenarios where model transparency is essential for stakeholders.
 
-Another promising line of development lies in the adoption of transformer-based architectures such as Chronos, which was released recently and designed specifically to handle temporal patterns with high flexibility. These models are particularly adept at learning long-range dependencies and handling multiple, overlapping seasonalities without hand-engineered features. Incorporating such architectures—possibly alongside traditional or semi-parametric models like Prophet—could further elevate forecasting performance, especially in high-frequency or high-dimensional retail settings.
+Another promising line of development lies in the adoption of transformer-based architectures such as **Chronos**, which was released last year and designed specifically to handle temporal patterns with high flexibility. These models are particularly adept at learning long-range dependencies and handling multiple, overlapping seasonalities without hand-engineered features. Incorporating such architectures—possibly alongside traditional or semi-parametric models like Prophet—could further elevate forecasting performance, especially in high-frequency or high-dimensional retail settings.
 
 ## Side Note
 ### How do you sample data
