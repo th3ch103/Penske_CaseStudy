@@ -113,14 +113,14 @@ Despite the reasonable performance of ARMA-Based model, they rely on **fixed lag
 
 When deployed in its univariate form, Prophet yielded a MAPE of 33.87%. By integrating the same exogenous variables, the multivariate Prophet model improved the forecast performance marginally further, achieving a MAPE of 19.55%. This **slight performance advantage** compared to ARMA-Based model indicates that Prophet's flexibility in handling nonlinear effects, abrupt changepoints, and non-standard seasonality—even when not strongly pronounced—provides a robust tool for forecasting in such scenarios.
 
-Although Prophet does not formally require residual diagnostics in the same way traditional statistical models do, such checks remain essential in practice. They provide assurance that the fitted model has effectively captured the signal. In univariate Prophet nidek applied here, the residual analysis supports the reliability of the results and further strengthens the case for using Prophet as a flexible forecasting framework, particularly in the presence of complex dynamics and external drivers. In the multivariate version, however, while residuals **generally follow a normal distribution**, slight tail deviations in the Q–Q plot suggest mild non-normality. This may indicate that the model underrepresents rare but impactful fluctuations—such as promotional events or supply shocks—that lie outside the range of typical weekly variation.
+Although Prophet does not formally require residual diagnostics in the same way traditional statistical models do, such checks remain essential in practice. They provide assurance that the fitted model has effectively captured the signal. In the univariate Prophet model, the residual analysis supports the reliability of the results. In the multivariate version, however, while residuals **generally follow a normal distribution**, slight tail deviations in the Q–Q plot suggest mild non-normality. This may indicate that the model underrepresents rare but impactful fluctuations—such as promotional events or supply shocks—that lie outside the range of typical weekly variation.
 
 ## Future Work
 Building on this, a natural direction for future work is to integrate **deeper domain knowledge**—for instance, through custom holiday effects, event regressors, or categorical segmentation—could improve model expressiveness. More **sophisticated hyperparameter tuning** and more **sophisticated cross-validation** methods would likely enhance generalization performance and reduce variance in real-time deployments.
 
 In addition, exploring **hybrid modeling** approaches that combine the respective strengths of Prophet and traditional ARIMA-based frameworks. Prophet’s adaptability to nonlinearity, irregular seasonality, and structural breaks could be complemented by the statistical rigor and interpretability of ARIMAX or SARIMAX, particularly in capturing autoregressive structure and evaluating model assumptions. Such an ensemble or regime-switching framework may offer a more robust and interpretable solution, especially in scenarios where model transparency is essential for stakeholders.
 
-Another promising line of development lies in the adoption of transformer-based architectures such as **Chronos**, which was released last year and designed specifically to handle temporal patterns with high flexibility. These models are particularly adept at learning long-range dependencies and handling multiple, overlapping seasonalities without hand-engineered features. Incorporating such architectures—possibly alongside traditional or semi-parametric models like Prophet—could further elevate forecasting performance, especially in high-frequency or high-dimensional retail settings.
+Another promising line of development lies in the adoption of transformer-based architectures such as **Chronos**, which was released last year and designed specifically to handle temporal patterns with high flexibility.
 
 ## Side Note
 ### How do you sample data
@@ -128,17 +128,17 @@ To evaluate forecasting performance while preserving temporal integrity, I appli
 
 ### Why Stationary and how to check
 Most classical time series models, such as ARIMA, assume that the underlying data is stationary—that is, its statistical properties (mean, variance, autocorrelation) do not change over time. Stationarity is crucial because it ensures that relationships learned from historical data are stable and remain valid in the future. To check for stationarity, I applied two complementary statistical tests using statsmodels in Python:
-- Augmented Dickey–Fuller (ADF) Test: A unit root test where a significant p-value (typically < 0.05) suggests the series is stationary.
-- Kwiatkowski–Phillips–Schmidt–Shin (KPSS) Test: Here, a non-significant p-value (typically > 0.05) indicates stationarity.
-- In addition to statistical tests, I examined rolling statistics (mean and standard deviation) and time plots to visually assess whether the series exhibits constant behavior over time.
+- **Augmented Dickey–Fuller (ADF) Test**: A unit root test where a significant p-value (typically < 0.05) suggests the series is stationary.
+- **Kwiatkowski–Phillips–Schmidt–Shin (KPSS) Test**: Here, a non-significant p-value (typically > 0.05) indicates stationarity.
+- In addition to statistical tests, I examined **rolling statistics** (mean and standard deviation) and **time plots** to visually assess whether the series exhibits constant behavior over time.
 
 ### What is auto-regressive and Moving Average and how to determine p&q
-- An Auto-Regressive (AR) model assumes the current value depends on its own previous values. AR(p) model: $y_t = \phi_1 y_{t-1} + \phi_2 y_{t-2} + \dots + \phi_p y_{t-p} + \epsilon_t$
+- An **Auto-Regressive (AR)** model assumes the current value depends on its own previous values. AR(p) model: $y_t = \phi_1 y_{t-1} + \phi_2 y_{t-2} + \dots + \phi_p y_{t-p} + \epsilon_t$
   - \( $p$ \): Number of lag terms  
   - \( $\phi$ \): AR coefficients  
   - \( $\epsilon_t$ \): White noise (random error)
 
-- A Moving Average (MA) model uses past forecast errors. MA(q) model: $y_t = \mu + \theta_1 \epsilon_{t-1} + \theta_2 \epsilon_{t-2} + \dots + \theta_q \epsilon_{t-q} + \epsilon_t$
+- A **Moving Average (MA)** model uses past forecast errors. MA(q) model: $y_t = \mu + \theta_1 \epsilon_{t-1} + \theta_2 \epsilon_{t-2} + \dots + \theta_q \epsilon_{t-q} + \epsilon_t$
   - \( $q$ \): Number of lagged forecast errors  
   - \( $\theta$ \): MA coefficients  
   - \( $\mu$ \): Mean of the series
@@ -150,18 +150,21 @@ Most classical time series models, such as ARIMA, assume that the underlying dat
 
 ### What statistics need to check
 Before presenting and validating any time series model, several key diagnostics and performance metrics must be evaluated:
+
 **1. Residual Diagnostics**
-- ACF and PACF of residuals: Ensure residuals are uncorrelated and resemble white noise.
-- Ljung–Box test: Confirms absence of autocorrelation in residuals.
-- Q–Q plot and histogram: Validate that residuals are approximately normally distributed.
-- Residuals over time: Check for homoscedasticity and lack of trend/clustering.
+- **ACF** and **PACF** of residuals: Ensure residuals are uncorrelated and resemble white noise.
+- **Ljung–Box test**: Confirms absence of autocorrelation in residuals.
+- **Q–Q plot and histogram**: Validate that residuals are approximately normally distributed.
+- **Residuals over time**: Check for homoscedasticity and lack of trend/clustering.
+  
 **2. Model Selection and Fit Metrics**
-- AIC (Akaike Information Criterion) and BIC (Bayesian Information Criterion): Evaluate model parsimony and goodness-of-fit for ARIMA-based models.
-- Cross-validation (for Prophet): Assess forecast performance with temporal splits (initial, horizon, period).
+- **AIC** (Akaike Information Criterion) and **BIC** (Bayesian Information Criterion): Evaluate model parsimony and goodness-of-fit for ARIMA-based models.
+- **Cross-validation**: Assess forecast performance with temporal splits (initial, horizon, period).
+  
 **3. Forecast Evaluation Metrics (on test set)**
-- MAPE (Mean Absolute Percentage Error): Reflects average forecast error in percentage terms.
-- SMAPE (Symmetric MAPE): Addresses MAPE’s sensitivity to low values.
-- MAE (Mean Absolute Error) and RMSE (Root Mean Squared Error): Quantify absolute and squared prediction error magnitude.
+- **MAPE** (Mean Absolute Percentage Error): Reflects average forecast error in percentage terms.
+- **SMAPE** (Symmetric MAPE): Addresses MAPE’s sensitivity to low values.
+- **MAE** (Mean Absolute Error) and **RMSE** (Root Mean Squared Error): Quantify absolute and squared prediction error magnitude.
 
 A reliable model should demonstrate white-noise residuals, good in-sample fit, and low forecast errors on unseen data—validated through both statistical and visual diagnostics.
 
