@@ -160,8 +160,7 @@ Before presenting and validating any time series model, several key diagnostics 
 - **Residuals over time**: Check for homoscedasticity and lack of trend/clustering.
   
 **2. Model Selection and Fit Metrics**
-- **AIC** (Akaike Information Criterion) and **BIC** (Bayesian Information Criterion): Evaluate model parsimony and goodness-of-fit for ARIMA-based models.
-- **Cross-validation**: Assess forecast performance with temporal splits (initial, horizon, period).
+- **AIC** (Akaike Information Criterion) and **BIC** (Bayesian Information Criterion): Taken model complexity and goodness-of-fit into account.
   
 **3. Forecast Evaluation Metrics (on test set)**
 - **MAPE** (Mean Absolute Percentage Error): Reflects average forecast error in percentage terms.
