@@ -128,6 +128,12 @@ Another promising line of development lies in the adoption of transformer-based 
 ### How do you sample data
 To evaluate forecasting performance while preserving temporal integrity, I applied time series–aware cross-validation methods. For ARMA-Based models, I used `TimeSeriesSplit` from sklearn, which incrementally expands the training window and slides the test window forward. This approach ensures no future data leaks into training and simulates sequential prediction. For Prophet, I used its built-in `cross_validation` function with a rolling-origin strategy, specifying the initial training period, forecast horizon, and step size. This mimics a real-world deployment where the model is retrained regularly and evaluated on unseen future data. These strategies provided consistent and realistic performance assessments across models.
 
+### Why stationary and how to check
+Most classical time series models, such as ARIMA, assume that the underlying data is stationary—that is, its statistical properties (mean, variance, autocorrelation) do not change over time. Stationarity is crucial because it ensures that relationships learned from historical data are stable and remain valid in the future. To check for stationarity, I applied two complementary statistical tests using statsmodels in Python:
+- **Augmented Dickey–Fuller (ADF) Test**: A unit root test where a significant p-value (typically < 0.05) suggests the series is stationary.
+- **Kwiatkowski–Phillips–Schmidt–Shin (KPSS) Test**: Here, a non-significant p-value (typically > 0.05) indicates stationarity.
+- In addition to statistical tests, I examined **rolling statistics** (mean and standard deviation) and **time plots** to visually assess whether the series exhibits constant behavior over time.
+
 ### What is auto-regressive and Moving Average and how to determine p&q
 - An **Auto-Regressive (AR)** model assumes the current value depends on its own previous values. AR(p) model: $y_t = \phi_1 y_{t-1} + \phi_2 y_{t-2} + \dots + \phi_p y_{t-p} + \epsilon_t$
   - \( $p$ \): Number of lag terms  
@@ -144,7 +150,7 @@ To evaluate forecasting performance while preserving temporal integrity, I appli
 | **PACF** | Determines AR (p) | Sharp drop after lag *k* → use p = *k* |
 | **ACF**  | Determines MA (q) | Sharp drop after lag *k* → use q = *k* |
 
-### What statistics need to check
+### What statistics need to check before presenting model
 Before presenting and validating any time series model, several key diagnostics and performance metrics must be evaluated:
 
 **1. Residual Diagnostics**
@@ -198,13 +204,6 @@ Although the time series initially appeared to resemble white noise—exhibiting
 | `2w_season`      | `2.33`   | `6`            |
 | `42w_season`     | `42.67`  | `2`            | 
 | `8w_season`      | `8.0`    | `1`            | 
-
-
-### Why stationary and how to check
-Most classical time series models, such as ARIMA, assume that the underlying data is stationary—that is, its statistical properties (mean, variance, autocorrelation) do not change over time. Stationarity is crucial because it ensures that relationships learned from historical data are stable and remain valid in the future. To check for stationarity, I applied two complementary statistical tests using statsmodels in Python:
-- **Augmented Dickey–Fuller (ADF) Test**: A unit root test where a significant p-value (typically < 0.05) suggests the series is stationary.
-- **Kwiatkowski–Phillips–Schmidt–Shin (KPSS) Test**: Here, a non-significant p-value (typically > 0.05) indicates stationarity.
-- In addition to statistical tests, I examined **rolling statistics** (mean and standard deviation) and **time plots** to visually assess whether the series exhibits constant behavior over time.
 
 
 ## Reference
