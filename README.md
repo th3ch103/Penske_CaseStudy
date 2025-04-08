@@ -36,27 +36,10 @@ It includes exploratory data analysis (EDA), stationarity checks, univariate and
 - **ACF/PACF ploat**: no distinct seasonal period observed by `y.diff(s)`.
 
 **3. Stationarity Testing**
-Importance of stationarity: In classical time series forecasting methods such as ARMA-based models, stationarity is a crucial assumption. A stationary time series has constant statistical properties over time — such as mean, variance, and autocovariance. Non-stationary data can lead to spurious results, poor forecasts, and unreliable confidence intervals.
-
 - ADF and KPSS tests confirm that `weekly_sales`, `x1_spend`, and `x2_spend` are all stationary.
 - Rolling statistics and ACF/PACF plots support stationarity visually.
 - No significant autocorrelations were observed, suggesting a weak AR/MA structure.
-#### Side Note
-  An Auto-Regressive (AR) model assumes the current value depends on its own previous values. AR(p) model: $y_t = \phi_1 y_{t-1} + \phi_2 y_{t-2} + \dots + \phi_p y_{t-p} + \epsilon_t$
-  - \( $p$ \): Number of lag terms  
-  - \( $\phi$ \): AR coefficients  
-  - \( $\epsilon_t$ \): White noise (random error)
-
-  A Moving Average (MA) model uses past forecast errors. MA(q) model: $y_t = \mu + \theta_1 \epsilon_{t-1} + \theta_2 \epsilon_{t-2} + \dots + \theta_q \epsilon_{t-q} + \epsilon_t$
-  - \( $q$ \): Number of lagged forecast errors  
-  - \( $\theta$ \): MA coefficients  
-  - \( $\mu$ \): Mean of the series
   
-| Plot  | Purpose | How to Identify |
-|-------|---------|-----------------|
-| **PACF** | Determines AR (p) | Sharp drop after lag *k* → use p = *k* |
-| **ACF**  | Determines MA (q) | Sharp drop after lag *k* → use q = *k* |
-
 **4. Feature & Lag Analysis**
 - **Lagged correlation**:
   - `x1_spend`: weak-to-moderate correlation with `weekly_sales`, peaking at lag 0 and lag 25.
@@ -137,18 +120,54 @@ In addition, exploring hybrid modeling approaches that combine the respective st
 
 Another promising line of development lies in the adoption of transformer-based architectures such as Chronos, which was released recently and designed specifically to handle temporal patterns with high flexibility. These models are particularly adept at learning long-range dependencies and handling multiple, overlapping seasonalities without hand-engineered features. Incorporating such architectures—possibly alongside traditional or semi-parametric models like Prophet—could further elevate forecasting performance, especially in high-frequency or high-dimensional retail settings.
 
+## Side Note
+### How do you sample data
+To evaluate forecasting performance while preserving temporal integrity, I applied time series–aware cross-validation methods. For ARMA-Based models, I used `TimeSeriesSplit` from sklearn, which incrementally expands the training window and slides the test window forward. This approach ensures no future data leaks into training and simulates sequential prediction. For Prophet, I used its built-in `cross_validation` function with a rolling-origin strategy, specifying the initial training period, forecast horizon, and step size. This mimics a real-world deployment where the model is retrained regularly and evaluated on unseen future data. These strategies provided consistent and realistic performance assessments across models.
+
+### Why Stationary and how to check
+Most classical time series models, such as ARIMA, assume that the underlying data is stationary—that is, its statistical properties (mean, variance, autocorrelation) do not change over time. Stationarity is crucial because it ensures that relationships learned from historical data are stable and remain valid in the future. To check for stationarity, I applied two complementary statistical tests using statsmodels in Python:
+- Augmented Dickey–Fuller (ADF) Test: A unit root test where a significant p-value (typically < 0.05) suggests the series is stationary.
+- Kwiatkowski–Phillips–Schmidt–Shin (KPSS) Test: Here, a non-significant p-value (typically > 0.05) indicates stationarity.
+- In addition to statistical tests, I examined rolling statistics (mean and standard deviation) and time plots to visually assess whether the series exhibits constant behavior over time.
+
+### What is auto-regressive and Moving Average and how to determine p&q
+- An Auto-Regressive (AR) model assumes the current value depends on its own previous values. AR(p) model: $y_t = \phi_1 y_{t-1} + \phi_2 y_{t-2} + \dots + \phi_p y_{t-p} + \epsilon_t$
+  - \( $p$ \): Number of lag terms  
+  - \( $\phi$ \): AR coefficients  
+  - \( $\epsilon_t$ \): White noise (random error)
+
+- A Moving Average (MA) model uses past forecast errors. MA(q) model: $y_t = \mu + \theta_1 \epsilon_{t-1} + \theta_2 \epsilon_{t-2} + \dots + \theta_q \epsilon_{t-q} + \epsilon_t$
+  - \( $q$ \): Number of lagged forecast errors  
+  - \( $\theta$ \): MA coefficients  
+  - \( $\mu$ \): Mean of the series
+  
+| Plot  | Purpose | How to Identify |
+|-------|---------|-----------------|
+| **PACF** | Determines AR (p) | Sharp drop after lag *k* → use p = *k* |
+| **ACF**  | Determines MA (q) | Sharp drop after lag *k* → use q = *k* |
+
+### What statistics need to check
+Before presenting and validating any time series model, several key diagnostics and performance metrics must be evaluated:
+**1. Residual Diagnostics**
+- ACF and PACF of residuals: Ensure residuals are uncorrelated and resemble white noise.
+- Ljung–Box test: Confirms absence of autocorrelation in residuals.
+- Q–Q plot and histogram: Validate that residuals are approximately normally distributed.
+- Residuals over time: Check for homoscedasticity and lack of trend/clustering.
+**2. Model Selection and Fit Metrics**
+- AIC (Akaike Information Criterion) and BIC (Bayesian Information Criterion): Evaluate model parsimony and goodness-of-fit for ARIMA-based models.
+- Cross-validation (for Prophet): Assess forecast performance with temporal splits (initial, horizon, period).
+**3. Forecast Evaluation Metrics (on test set)**
+- MAPE (Mean Absolute Percentage Error): Reflects average forecast error in percentage terms.
+- SMAPE (Symmetric MAPE): Addresses MAPE’s sensitivity to low values.
+- MAE (Mean Absolute Error) and RMSE (Root Mean Squared Error): Quantify absolute and squared prediction error magnitude.
+
+A reliable model should demonstrate white-noise residuals, good in-sample fit, and low forecast errors on unseen data—validated through both statistical and visual diagnostics.
+
 ## Reference
 - [Oracle – Time Series Forecasting (OML4SQL)](https://docs.oracle.com/en/database/oracle/machine-learning/oml4sql/21/dmcon/time-series.html#GUID-0D6954B9-9D66-42E2-A62F-F3FFE84B827E)
 - [Statsmodels ARIMA Documentation](https://www.statsmodels.org/stable/generated/statsmodels.tsa.arima.model.ARIMA.html)
 - [Interpreting ACF and PACF – Kaggle Notebook by @iamleonie](https://www.kaggle.com/code/iamleonie/time-series-interpreting-acf-and-pacf)
 - [Prophet Official Documentation – Python API](https://facebook.github.io/prophet/docs/quick_start.html#python-api)
 - [Chronos: Learning the Language of Time Series (arXiv:2403.07815)](https://arxiv.org/html/2403.07815v1)
-
-
-
-
-
-
-
 
 
