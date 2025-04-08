@@ -1,1 +1,154 @@
 # Penske_CaseStudy
+
+This case study project focuses on modeling and forecasting time series weekly sales data using ARIMA and Prophet. 
+It includes exploratory data analysis (EDA), stationarity checks, univariate and multivariate modeling, parameter tuning, and model evaluation using metrics such as MAPE, MAE, and RMSE.
+
+## Project Structure
+
+**Jupyter Notebooks:**
+- `1_eda.ipynb`: Exploratory data analysis with stationarity check
+- `2_arma_based.ipynb`: ARIMA/SARIMA and ARIMAX/SARIMAX modeling
+- `3_prophet.ipynb`: Prophet modeling
+  
+**Helper Functions:**
+- `stationarity.py`: Stationarity test functions
+- `modeling_arima.py`: ARIMA modeling functions
+- `modeling_prophet.py`: Prophet modeling functions
+
+**Other stuff**
+- `tsdata1.xlsx`: Data
+
+## Methodology
+
+### Exploratory Data Analysis (`1_eda.ipynb`):
+**1. Data Overview**
+- The dataset contains 160 weekly records from Jan 2020 to Jan 2023, including:
+  - `weekly_sales`: target variable.
+  - `x1_spend`, `x2_spend`: external regressors.
+- Initial EDA revealed moderate variance in sales with no missing values or extreme outliers.
+  
+**2. Seasonality Analysis**
+- **STL decomposition** (with seasonal periods of 7, 13, 26, and 52 weeks):
+  - Short-term fluctuations visible with `period=7`, but residuals remain noisy.
+  - Longer windows overly smoothed the data, potentially masking signals.
+- **Date-based visual inspection**: mild monthly/weekly patterns, but no strong annual/quarterly seasonality.
+- **Fourier transform**: no distinct dominant seasonal frequencies observed.
+- **ACF/PACF ploat**: no distinct seasonal period observed by `y.diff(s)`.
+
+**3. Stationarity Testing**
+Importance of stationarity: In classical time series forecasting methods such as ARMA-based models, stationarity is a crucial assumption. A stationary time series has constant statistical properties over time — such as mean, variance, and autocovariance. Non-stationary data can lead to spurious results, poor forecasts, and unreliable confidence intervals.
+
+- ADF and KPSS tests confirm that `weekly_sales`, `x1_spend`, and `x2_spend` are all stationary.
+- Rolling statistics and ACF/PACF plots support stationarity visually.
+- No significant autocorrelations were observed, suggesting a weak AR/MA structure.
+#### Side Note
+  An Auto-Regressive (AR) model assumes the current value depends on its own previous values. AR(p) model: $y_t = \phi_1 y_{t-1} + \phi_2 y_{t-2} + \dots + \phi_p y_{t-p} + \epsilon_t$
+  - \( $p$ \): Number of lag terms  
+  - \( $\phi$ \): AR coefficients  
+  - \( $\epsilon_t$ \): White noise (random error)
+
+  A Moving Average (MA) model uses past forecast errors. MA(q) model: $y_t = \mu + \theta_1 \epsilon_{t-1} + \theta_2 \epsilon_{t-2} + \dots + \theta_q \epsilon_{t-q} + \epsilon_t$
+  - \( $q$ \): Number of lagged forecast errors  
+  - \( $\theta$ \): MA coefficients  
+  - \( $\mu$ \): Mean of the series
+  
+| Plot  | Purpose | How to Identify |
+|-------|---------|-----------------|
+| **PACF** | Determines AR (p) | Sharp drop after lag *k* → use p = *k* |
+| **ACF**  | Determines MA (q) | Sharp drop after lag *k* → use q = *k* |
+
+**4. Feature & Lag Analysis**
+- **Lagged correlation**:
+  - `x1_spend`: weak-to-moderate correlation with `weekly_sales`, peaking at lag 0 and lag 25.
+  - `x2_spend`: strong immediate effect (lag 0 ~0.80) that quickly diminishes.
+- **Multicollinearity**:
+  - Low correlation between `x1_spend` and `x2_spend` (~0.02).
+  - VIF for both variables = 4.92, below threshold of concern.
+  
+### ARMA-Baed Modeling (`2_arma_based.ipynb`):
+This section describes the full modeling process using ARIMA-family models (ARIMA, SARIMA, ARIMAX, SARIMAX), including training, hyperparameter selection, diagnostics, and evaluation.
+
+**1. Preprocessing**  
+   - Time-aware 80/20 split using `df.iloc` to preserve sequence.
+   - `train_series`: Target variable for model fitting.  
+   - `train_exog`: Optional exogenous regressors.
+
+**2. Model Selection via Grid Search**  
+   - Hyperparameter tuning via `TimeSeriesSplit` cross-validation.
+   - Evaluated using AIC, BIC, and MAPE to identify best model.
+
+**3. Model Training & Forecasting**  
+   - Final model fitted on full training data.
+   - Forecast made on test set using both target and (if needed) exogenous regressors.
+
+**4. Residual Diagnostics and Performance Evaluation**  
+   - Ljung-Box test, ACF/PACF plots, and Q–Q plots ensure white noise residuals and valid assumptions.
+   - Forecast accuracy evaluated with MAE, RMSE, MAPE, and SMAPE.
+
+### Prophet Modeling (`3_prophet.ipynb`):
+This section outlines the modeling approach using Facebook Prophet, a decomposable time series model that captures trend, seasonality, holidays, and external regressors.
+
+**1. Preprocessing**:
+   - Data was reformatted to Prophet’s expected structure (`ds`, `y`).
+   - Seasonalities were identified using **Fourier Transform (FFT)** to extract dominant periods (e.g., 2.33, 5.33, 7.11, 8, and 42.67 weeks).
+   - Additional exogenous regressors (`x1_spend`, `x2_spend`) were added for multivariate models.
+
+**2. Custom Seasonality**:
+   - Prophet’s default weekly/yearly seasonalities were disabled.
+   - Custom seasonalities were added based on FFT output using `add_seasonality()`.
+
+**3. Model Selection via Grid Search**:
+   - Parameters tuned: `changepoint_prior_scale`, `prior_scale`, and `fourier_orders`.
+   - Evaluated using MAPE, MAE, and RMSE on the test set.
+
+**4. Model Training & Forecasting**:
+   - Trained on 80% of the data, tested on the final 20%.
+     
+**4. Residual Diagnostics and Performance Evaluation**  
+   - Performance assessed using residual diagnostics.
+   - Forecast accuracy evaluated with MAE, RMSE, MAPE, and SMAPE.
+
+## Interpretation
+
+The exploratory data analysis revealed that the weekly sales data is stationary, as confirmed by both the ADF and KPSS tests, and that there is no pronounced seasonality in the STL/FFT decomposition. I start with simple ARIMA models aimed at capturing any short-term autocorrelation inherent in the data without needing to account for strong seasonal components.
+| Model     | Order                        | MAPE   | SMAPE  | MAE    | RMSE   |
+|-----------|-------------------------------|--------|--------|--------|--------|
+| ARIMA     | (0, 0, 1)                     | 36.14% | 25.10% | 1317.3 | 1741.6 |
+| SARIMA    | (0, 0, 1)(0, 0, 1, 7)         | 36.14% | 25.10% | 1317.3 | 1741.6 |
+| ARIMAX    | (2, 0, 0) + `x1_spend`, `x2_spend` | 20.34% | 18.23% | 877.4  | 1059.3 |
+| SARIMAX   | (2, 0, 0)(0, 0, 0, 7) + `x1_spend`, `x2_spend`  | 20.34% | 18.23% | 877.4  | 1059.3 |
+
+The basic ARIMA and its seasonal variant, SARIMA, yielded similar results with a MAPE of 36.14%, indicating that adding the seasonal component in this case did not enhance model performance given the absence of dominant seasonal patterns. To better capture the effects of external factors, the models were extended to ARIMAX and SARIMAX by incorporating the regressors `x1_spend` and `x2_spend`. This integration led to a significant improvement in forecasting accuracy, reducing the MAPE to around 20.34%. For all models above, the ACF and PACF plots of the residuals showed no significant lags, and the Ljung–Box test returned a reasonable p-value, indicating that the residuals behave like white noise and that the model has sufficiently captured the underlying temporal structure. Furthermore, the Q–Q plot confirmed that the residuals were approximately normally distributed with no substantial skewness or kurtosis, supporting the assumption of well-behaved residuals and the statistical reliability of the forecasts.
+
+Despite the reasonable performance of ARMA-Based model, they rely on fixed lag structures and cannot capture nonlinear effects, multiple overlapping seasonalities, or sudden changepoints in trend, thus I moved on with Prophet model.
+| Model             | Type         | MAPE   | SMAPE  | MAE    | RMSE   |
+|------------------|--------------|--------|--------|--------|--------|
+| Prophet           | Univariate   | 33.87% | 23.74% | 1219.4 | 1697.1 |
+| Prophet           | Multivariate | 19.55% | 17.55% | 828.4 | 1089.0 |
+
+The Prophet modeling framework offers an attractive alternative in this context. When deployed in its univariate form, Prophet yielded a MAPE of 33.87%. By integrating the same exogenous variables, the multivariate Prophet model improved the forecast performance marginally further, achieving a MAPE of 19.55%. This slight performance advantage compared to ARMA-Based model indicates that Prophet's flexibility in handling nonlinear effects, abrupt changepoints, and non-standard seasonality—even when not strongly pronounced—provides a robust tool for forecasting in such scenarios.
+
+Although Prophet does not formally require residual diagnostics in the same way traditional statistical models do, such checks remain essential in practice. They provide assurance that the fitted model has effectively captured the signal, that its uncertainty intervals are well-calibrated, and that its forecasts can be trusted for decision-making. In univariate Prophet nidek applied here, the residual analysis supports the reliability of the results and further strengthens the case for using Prophet as a flexible forecasting framework, particularly in the presence of complex dynamics and external drivers. In the multivariate version, however, while residuals generally follow a normal distribution, slight tail deviations in the Q–Q plot suggest mild non-normality. This may indicate that the model underrepresents rare but impactful fluctuations—such as promotional events or supply shocks—that lie outside the range of typical weekly variation.
+
+## Future Work
+Building on this, a natural direction for future work is to integrate deeper domain knowledge—for instance, through custom holiday effects, event regressors, or categorical segmentation—could improve model expressiveness. More sophisticated hyperparameter tuning and cross-validation strategies would likely enhance generalization performance and reduce variance in real-time deployments.
+
+In addition, exploring hybrid modeling approaches that combine the respective strengths of Prophet and traditional ARIMA-based frameworks. Prophet’s adaptability to nonlinearity, irregular seasonality, and structural breaks could be complemented by the statistical rigor and interpretability of ARIMAX or SARIMAX, particularly in capturing autoregressive structure and evaluating model assumptions. Such an ensemble or regime-switching framework may offer a more robust and interpretable solution, especially in scenarios where model transparency is essential for stakeholders.
+
+Another promising line of development lies in the adoption of transformer-based architectures such as Chronos, which was released recently and designed specifically to handle temporal patterns with high flexibility. These models are particularly adept at learning long-range dependencies and handling multiple, overlapping seasonalities without hand-engineered features. Incorporating such architectures—possibly alongside traditional or semi-parametric models like Prophet—could further elevate forecasting performance, especially in high-frequency or high-dimensional retail settings.
+
+## Reference
+- [Oracle – Time Series Forecasting (OML4SQL)](https://docs.oracle.com/en/database/oracle/machine-learning/oml4sql/21/dmcon/time-series.html#GUID-0D6954B9-9D66-42E2-A62F-F3FFE84B827E)
+- [Statsmodels ARIMA Documentation](https://www.statsmodels.org/stable/generated/statsmodels.tsa.arima.model.ARIMA.html)
+- [Interpreting ACF and PACF – Kaggle Notebook by @iamleonie](https://www.kaggle.com/code/iamleonie/time-series-interpreting-acf-and-pacf)
+- [Prophet Official Documentation – Python API](https://facebook.github.io/prophet/docs/quick_start.html#python-api)
+- [Chronos: Learning the Language of Time Series (arXiv:2403.07815)](https://arxiv.org/html/2403.07815v1)
+
+
+
+
+
+
+
+
+
